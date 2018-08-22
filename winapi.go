@@ -32,31 +32,31 @@ import (
 )
 
 const (
-	ATTACH_PARENT_PROCESS = ^uint32(0) // (DWORD)-1
+	attachParentProcess = ^uint32(0) // (DWORD)-1
 
-	MB_OK                = 0x00000000
-	MB_OKCANCEL          = 0x00000001
-	MB_ABORTRETRYIGNORE  = 0x00000002
-	MB_YESNOCANCEL       = 0x00000003
-	MB_YESNO             = 0x00000004
-	MB_RETRYCANCEL       = 0x00000005
-	MB_CANCELTRYCONTINUE = 0x00000006
-	MB_ICONHAND          = 0x00000010
-	MB_ICONQUESTION      = 0x00000020
-	MB_ICONEXCLAMATION   = 0x00000030
-	MB_ICONASTERISK      = 0x00000040
-	MB_USERICON          = 0x00000080
-	MB_ICONWARNING       = MB_ICONEXCLAMATION
-	MB_ICONERROR         = MB_ICONHAND
-	MB_ICONINFORMATION   = MB_ICONASTERISK
-	MB_ICONSTOP          = MB_ICONHAND
+	mbOk                = 0x00000000
+	mbOkCancel          = 0x00000001
+	mbAbortRetryIgnore  = 0x00000002
+	mbYesNoCancel       = 0x00000003
+	mbYesNo             = 0x00000004
+	mbRetryCancel       = 0x00000005
+	mbCancelTryContinue = 0x00000006
+	mbIconHand          = 0x00000010
+	mbIconQuestion      = 0x00000020
+	mbIconExclamation   = 0x00000030
+	mbIconAsterisk      = 0x00000040
+	mbUserIcon          = 0x00000080
+	mbIconWarning       = mbIconExclamation
+	mbIconError         = mbIconHand
+	mbIconInformation   = mbIconAsterisk
+	mbIconStop          = mbIconHand
 
-	MB_DEFBUTTON1 = 0x00000000
-	MB_DEFBUTTON2 = 0x00000100
-	MB_DEFBUTTON3 = 0x00000200
-	MB_DEFBUTTON4 = 0x00000300
+	mbDefButton1 = 0x00000000
+	mbDefButton2 = 0x00000100
+	mbDefButton3 = 0x00000200
+	mbDefButton4 = 0x00000300
 
-	CREATE_NO_WINDOW = 0x08000000
+	createNoWindow = 0x08000000
 )
 
 var (
@@ -67,49 +67,55 @@ var (
 	procMessageBox    = user32.NewProc("MessageBoxW")
 )
 
-func MessageBox(caption, text string, style uintptr) (result int) {
+// DefaultMessageBox is win32 MessageBox in information mode
+func DefaultMessageBox(caption, text string) (result int) {
+	return messageBox(caption, text, mbOk|mbIconInformation)
+}
+
+// ErrorMessageBox is win32 MessageBox in error mode
+func ErrorMessageBox(text string) (result int) {
+	return messageBox("Error", text, mbOk|mbIconError)
+}
+
+// messageBox call win32 MessageBox and return int result
+func messageBox(caption, text string, style uintptr) (result int) {
 	ret, _, _ := procMessageBox.Call(0,
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(caption))),
 		style)
-	//	if callErr != nil {
-	//		abort("Call MessageBox", callErr)
-	//	}
 	result = int(ret)
 	return
 }
 
+// AttachConsole call win32 AttachConsole
 func AttachConsole() (ok bool) {
-	return attachConsole(ATTACH_PARENT_PROCESS)
+	return attachConsole(attachParentProcess)
 }
 
 func attachConsole(dwParentProcess uint32) (ok bool) {
-	//r0, _, _ := syscall.Syscall(procAttachConsole.Addr(), 1, uintptr(dwParentProcess), 0, 0)
 	r0, _, _ := procAttachConsole.Call(uintptr(dwParentProcess))
 	ok = bool(r0 != 0)
 	return
 }
 
+// FreeConsole call win32 FreeConsole
 func FreeConsole() (ok bool) {
-	//r0, _, _ := syscall.Syscall(procFreeConsole.Addr(), 0, 0, 0, 0)
 	r0, _, _ := procFreeConsole.Call()
 	ok = bool(r0 != 0)
 	return
 }
 
+// Is64bitOS try to call win32 IsWow64Process. Our application must be 32bit to have correct result.
 func Is64bitOS() bool {
-	var is64bit bool = true
+	is64bit := true
 
 	procIsWow64Process := modkernel32.NewProc("IsWow64Process")
-	//	fmt.Printf("%v\n", procIsWow64Process)
 	handle, err := syscall.GetCurrentProcess()
-	//	fmt.Printf("handle: %v\n", handle)
 	if err != nil {
 		is64bit = false
 	} else {
 		var result bool
 		x, _, _ := procIsWow64Process.Call(uintptr(handle), uintptr(unsafe.Pointer(&result)))
-		//fmt.Printf("%v\n", result)
 		if x == 0 || !result {
 			is64bit = false
 		}
@@ -120,12 +126,13 @@ func Is64bitOS() bool {
 
 var zeroSysProcAttr syscall.SysProcAttr
 
+// StartCmdScript starts %COMSPEC% (cmd.exe expected) with scriptName as /C argument value.
 func StartCmdScript(scriptName string, attr *os.ProcAttr) {
 	if attr.Sys == nil {
 		attr.Sys = &zeroSysProcAttr
 	}
 	attr.Sys.HideWindow = true
-	attr.Sys.CreationFlags = attr.Sys.CreationFlags | CREATE_NO_WINDOW
+	attr.Sys.CreationFlags = attr.Sys.CreationFlags | createNoWindow
 	if _, err := os.Stat(scriptName); err == nil {
 		LogInfo(fmt.Sprintf("execute script: %v", scriptName))
 		p, perr := os.StartProcess(os.Getenv("COMSPEC"), []string{"/C", scriptName}, attr)
@@ -151,12 +158,13 @@ func makeCmdLine(args []string) string {
 	return `/C "` + s + `"`
 }
 
+// StartCmdScripts creates sequence '"script1" && "script2" && ...' and call %COMSPEC% (cmd.exe) with this sequence as /C value
 func StartCmdScripts(scriptNames []string, attr *os.ProcAttr) {
 	if attr.Sys == nil {
 		attr.Sys = &zeroSysProcAttr
 	}
 	attr.Sys.HideWindow = true
-	attr.Sys.CreationFlags = attr.Sys.CreationFlags | CREATE_NO_WINDOW
+	attr.Sys.CreationFlags = attr.Sys.CreationFlags | createNoWindow
 
 	cmdLine := makeCmdLine(scriptNames)
 	attr.Sys.CmdLine = cmdLine

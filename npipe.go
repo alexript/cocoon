@@ -32,11 +32,13 @@ import (
 	"github.com/natefinch/npipe"
 )
 
+// GetNpipeName constructs npipe name by pid
 func GetNpipeName() string {
 	pid := syscall.Getpid()
 	return fmt.Sprintf("\\\\.\\pipe\\cocoon_%v", pid)
 }
 
+// ListenNpipe starts npipe listener
 func ListenNpipe() *npipe.PipeListener {
 	ln, err := npipe.Listen(GetNpipeName())
 	if err != nil {
@@ -59,7 +61,7 @@ func ListenNpipe() *npipe.PipeListener {
 					// handle error
 					return
 				}
-				go MessageBox("NPipe message", msg, MB_OK|MB_ICONINFORMATION)
+				go DefaultMessageBox("NPipe message", msg)
 
 			}(conn)
 		}

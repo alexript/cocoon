@@ -32,5 +32,5 @@ func abort(funcname string, err error) {
 }
 
 func showError(errorText string) {
-	MessageBox("Error", errorText, MB_OK|MB_ICONERROR)
+	ErrorMessageBox(errorText)
 }

@@ -70,9 +70,9 @@ func readConfiguration() *initfile.File {
 		os.Exit(1)
 	}
 	params := os.Args[1:]
-	var exitFlag int = 0
+	exitFlag := 0
 
-	if ShouldMetamorf(params) {
+	if ShouldMetamorph(params) {
 		appCommand, cmdErr := application.Parse(params)
 		LogWarning("Metamorphose: " + appCommand)
 		if cmdErr == nil {
@@ -93,7 +93,7 @@ func readConfiguration() *initfile.File {
 			}
 			if cfgChanged {
 				MetamorphoseDate(cfg)
-				cfg.SaveTo(GetConfigFileName())
+				_ = cfg.SaveTo(GetConfigFileName())
 				exitFlag = 1
 			} else {
 				LogError(fmt.Sprintf("Metamorphose: %v failed\n %v", appCommand, os.Args))
@@ -116,6 +116,7 @@ func readConfiguration() *initfile.File {
 	return cfg
 }
 
+// Start cocoon container
 func Start(startupCmdFile, logFileName string) {
 
 	isConsoleAttached := AttachConsole()

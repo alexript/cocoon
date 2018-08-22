@@ -44,7 +44,8 @@ import (
 	initfile "gopkg.in/ini.v1"
 )
 
-func ShouldMetamorf(params []string) bool {
+// ShouldMetamorph returns true if params contain "metamorphose" keyword
+func ShouldMetamorph(params []string) bool {
 	for _, a := range params {
 		if a == "metamorphose" {
 			return true
@@ -57,6 +58,7 @@ func logMorphInfo(section, key, value string) {
 	LogWarning(fmt.Sprintf("Applyed new metamorphose: [%v] %v -> %v", section, key, value))
 }
 
+// MetamorphoseCocoonStartup sets new [cocoon].startup config value
 func MetamorphoseCocoonStartup(value string, cfg *initfile.File) bool {
 	if value == "" {
 		return false
@@ -67,6 +69,7 @@ func MetamorphoseCocoonStartup(value string, cfg *initfile.File) bool {
 
 }
 
+// MetamorphoseCocoonLoglevel sets new [cocoon].log.level config value
 func MetamorphoseCocoonLoglevel(value string, cfg *initfile.File) bool {
 	if value == "" {
 		return false
@@ -77,6 +80,7 @@ func MetamorphoseCocoonLoglevel(value string, cfg *initfile.File) bool {
 
 }
 
+// MetamorphoseCocoonLogname sets new [cocoon].log.file config value
 func MetamorphoseCocoonLogname(value string, cfg *initfile.File) bool {
 	if value == "" {
 		return false
@@ -87,6 +91,7 @@ func MetamorphoseCocoonLogname(value string, cfg *initfile.File) bool {
 
 }
 
+// MetamorphoseCocoonUsepipe sets new [cocoon].usepipe value
 func MetamorphoseCocoonUsepipe(value string, cfg *initfile.File) bool {
 	if value == "" {
 		return false
@@ -96,6 +101,7 @@ func MetamorphoseCocoonUsepipe(value string, cfg *initfile.File) bool {
 	return true
 }
 
+// MetamorphoseChrysalisDir sets new values in [chrystalis] config section
 func MetamorphoseChrysalisDir(value string, cfg *initfile.File) bool {
 	if value == "" {
 		return false
@@ -116,6 +122,7 @@ func MetamorphoseChrysalisDir(value string, cfg *initfile.File) bool {
 
 }
 
+// MetamorphoseLarvaStartup sets new [larva].startup config value
 func MetamorphoseLarvaStartup(value string, cfg *initfile.File) bool {
 	if value != "" {
 		cfg.Section("larva").Key("startup").SetValue(value)
@@ -125,6 +132,7 @@ func MetamorphoseLarvaStartup(value string, cfg *initfile.File) bool {
 	return false
 }
 
+// MetamorphoseInjectChrysalis extract zip into [chrysalis].dir.base and updates config
 func MetamorphoseInjectChrysalis(injectName, injectZip, dropRuntimes string, cfg *initfile.File) bool {
 	// if injectZip exists -> unpack into runtime folder
 	// if unpacked sucessfully -> apply new runtime into config
@@ -196,13 +204,14 @@ func metamorphUnpack(zipfile, path, unpackedFolderName string) bool {
 	if _, err1 := os.Stat(target); err1 == nil {
 		return false
 	}
-	err := Unzip(zipfile, target)
+	err := unzip(zipfile, target)
 	if err != nil {
 		LogError(err)
 	}
 	return err == nil
 }
 
+// MetamorphoseDate write new metamorphose date into config
 func MetamorphoseDate(cfg *initfile.File) {
 	cfg.Section("metamorphosis").Key("date").SetValue(time.Now().String())
 }

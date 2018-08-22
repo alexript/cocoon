@@ -36,6 +36,7 @@ var (
 	warnLog *log.Logger
 )
 
+// GetOutputs creates stdout and stderr files in specific folder and returns file handlers
 func GetOutputs(folder string, filenamePrefix string) (stdout *os.File, stderr *os.File, err error) {
 	path, err := filepath.Abs(folder)
 	if err != nil {

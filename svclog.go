@@ -36,30 +36,32 @@ import (
 	"golang.org/x/sys/windows/svc/eventlog"
 )
 
-type severity int
+// Severity is log severity level.
+type Severity int
 
 // Severity levels.
 const (
-	sInfo severity = iota
+	sInfo Severity = iota
 	sWarning
 	sError
 	sFatal
 )
 
 type prependedRecord struct {
-	Level severity
+	Level Severity
 	Text  string
 }
 
 var (
-	logLevel      severity = sWarning
+	logLevel      = sWarning
 	svclogWriter  *eventlog.Log
-	regTitle      string = `Cocoon`
-	messagePrefix string = ""
+	regTitle      = "Cocoon"
+	messagePrefix = ""
 	buffer        []prependedRecord
 )
 
-func ParseLogLevel(levelString string) severity {
+// ParseLogLevel convert string to Severity
+func ParseLogLevel(levelString string) Severity {
 	switch levelString {
 	case "info":
 		return sInfo
@@ -72,11 +74,13 @@ func ParseLogLevel(levelString string) severity {
 	}
 }
 
-func SetLogLevel(level severity) {
+// SetLogLevel sets log level
+func SetLogLevel(level Severity) {
 	logLevel = level
 }
 
-func GetLogLevel() severity {
+// GetLogLevel returns current log level
+func GetLogLevel() Severity {
 	return logLevel
 }
 
@@ -96,6 +100,7 @@ func newWriter(src string) (*eventlog.Log, error) {
 	return el, nil
 }
 
+// Initlog log initialization
 func Initlog(title string, exeFileName string) {
 	regTitle = title
 	messagePrefix = exeFileName + ": "
@@ -114,13 +119,14 @@ func Initlog(title string, exeFileName string) {
 
 }
 
+// CloseLog close log.
 func CloseLog() {
 	if svclogWriter != nil {
-		svclogWriter.Close()
+		_ = svclogWriter.Close()
 	}
 }
 
-func writeToLog(level severity, text string) {
+func writeToLog(level Severity, text string) {
 
 	if level < logLevel {
 		return
@@ -133,28 +139,34 @@ func writeToLog(level severity, text string) {
 
 	switch level {
 	case sInfo:
-		svclogWriter.Info(1, messagePrefix+text)
+		_ = svclogWriter.Info(1, messagePrefix+text)
 		return
 	case sWarning:
-		svclogWriter.Warning(3, messagePrefix+text)
+		_ = svclogWriter.Warning(3, messagePrefix+text)
 		return
 	case sError:
-		svclogWriter.Error(2, messagePrefix+text)
+		_ = svclogWriter.Error(2, messagePrefix+text)
 		return
 	}
 	LogFatal(fmt.Sprintf("unrecognized severity: %v", level))
 }
 
+// LogInfo log as information
 func LogInfo(v ...interface{}) {
 	writeToLog(sInfo, fmt.Sprint(v...))
 }
+
+// LogWarning log as warinig
 func LogWarning(v ...interface{}) {
 	writeToLog(sWarning, fmt.Sprint(v...))
 }
+
+// LogError log as error
 func LogError(v ...interface{}) {
 	writeToLog(sError, fmt.Sprint(v...))
 }
 
+// LogFatal panic
 func LogFatal(v ...interface{}) {
 	panic(fmt.Sprintf("svclog failed: %v", v...))
 }

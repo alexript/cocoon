@@ -34,6 +34,7 @@ import (
 	initfile "gopkg.in/ini.v1"
 )
 
+// GetConfigFileName returns config file name
 func GetConfigFileName() string {
 	name, err := GetMyselfName()
 	if err != nil {
@@ -128,6 +129,7 @@ func createDefaultConfig(configFileName string) {
 
 }
 
+// HasConfig checks is config file is available
 func HasConfig() bool {
 	configFileName := GetConfigFileName()
 
@@ -138,6 +140,7 @@ func HasConfig() bool {
 	return true
 }
 
+// LoadConfig if config file is not exists then creates default and load config file
 func LoadConfig() (*initfile.File, error) {
 	configFileName := GetConfigFileName()
 

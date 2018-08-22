@@ -37,22 +37,26 @@ import (
 	validator "gopkg.in/validator.v2"
 )
 
+// InitCocoon initialize cocoon
 func InitCocoon() {
-	validator.SetValidationFunc("fileExists", fileExists)
+	_ = validator.SetValidationFunc("fileExists", fileExists)
 }
 
+// GetMyselfName returns abs filepath to executable file
 func GetMyselfName() (string, error) {
 	prog := os.Args[0]
 	p, err := filepath.Abs(prog)
 	return p, err
 }
 
+// GetMyselfDir returns folder where executable file is.
 func GetMyselfDir() string {
 	myselfName, _ := GetMyselfName()
 	myselfDir := filepath.Dir(myselfName)
 	return myselfDir
 }
 
+// GetCocoonAssetName returns filename, produced by cocoon exe file name without extension + given extension
 func GetCocoonAssetName(extension string) string {
 	myname, err := GetMyselfName()
 	if err != nil {
@@ -65,11 +69,12 @@ func GetCocoonAssetName(extension string) string {
 func is64bitToString(is bool) string {
 	if is {
 		return "64bit"
-	} else {
-		return "32bit"
 	}
+	return "32bit"
+
 }
 
+// GetAbsolutePath transforms given path to the absolute path in myself dir if relative. Returns as is if path is absolute.
 func GetAbsolutePath(somepath string) string {
 	isAbsPath := filepath.IsAbs(somepath)
 	if isAbsPath {
@@ -121,7 +126,7 @@ func getCocoonUsepipe(cfg *initfile.File) bool {
 	return strings.EqualFold(usePipe, "true") || strings.EqualFold(usePipe, "yes")
 }
 
-func GetChrystalisVersionPath(cfg *initfile.File) string {
+func getChrystalisVersionPath(cfg *initfile.File) string {
 	basedir := cfg.Section("chrysalis").Key("dir.base").Validate(func(in string) string {
 		if len(in) == 0 {
 			return "runtime"
@@ -134,7 +139,7 @@ func GetChrystalisVersionPath(cfg *initfile.File) string {
 }
 
 func getChrystalisPath(cfg *initfile.File, is64bit bool) string {
-	versiondir := GetChrystalisVersionPath(cfg)
+	versiondir := getChrystalisVersionPath(cfg)
 
 	archsuffix := is64bitToString(is64bit)
 	archdir := cfg.Section("chrysalis").Key("dir." + archsuffix).Validate(func(in string) string {
@@ -148,7 +153,7 @@ func getChrystalisPath(cfg *initfile.File, is64bit bool) string {
 }
 
 func getChrystalisInitScript(cfg *initfile.File) string {
-	versiondir := GetChrystalisVersionPath(cfg)
+	versiondir := getChrystalisVersionPath(cfg)
 	initScriptName := cfg.Section("chrysalis").Key("initscript").Validate(func(in string) string {
 		if len(in) == 0 {
 			return "init.cmd"
@@ -180,6 +185,7 @@ func getLarvaStartupScript(cfg *initfile.File) string {
 	return GetAbsolutePath(filepath.Join(larvaPath, initScriptName))
 }
 
+// Cocoon configuration structure
 type Cocoon struct {
 	ArchStr           string
 	Path              string `validate:"fileExists"`
@@ -203,9 +209,9 @@ func (cocoon Cocoon) String() string {
 	buffer.WriteString(fmt.Sprintf("Larva startup script: %s\n", cocoon.LarvaStartup))
 
 	return buffer.String()
-
 }
 
+// NewCocoon creates new Coocon object, based on config file content.
 func NewCocoon(cfg *initfile.File, is64bit bool) Cocoon {
 	return Cocoon{
 		ArchStr:           is64bitToString(is64bit),
@@ -219,6 +225,7 @@ func NewCocoon(cfg *initfile.File, is64bit bool) Cocoon {
 	}
 }
 
+// DefaultCocoon creates new Cocoon object with default values.
 func DefaultCocoon(startupCmdFile string, is64bit bool) Cocoon {
 	return Cocoon{
 		ArchStr:           is64bitToString(is64bit),
