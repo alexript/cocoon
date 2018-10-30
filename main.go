@@ -117,7 +117,7 @@ func readConfiguration() *initfile.File {
 }
 
 // Start cocoon container
-func Start(startupCmdFile, logFileName string) {
+func Start(startupCmdFile, logFileName string, cocoon *Cocoon) {
 
 	isConsoleAttached := AttachConsole()
 
@@ -147,10 +147,12 @@ func Start(startupCmdFile, logFileName string) {
 
 	LogInfo(fmt.Sprintf("Is 64bit environment: %v", is64bit))
 
-	cocoon := DefaultCocoon(startupCmdFile, is64bit)
-	if hasConfig && cfg != nil {
-		InitCocoon()
-		cocoon = NewCocoon(cfg, is64bit)
+	if cocoon == nil {
+		*cocoon = DefaultCocoon(startupCmdFile, is64bit)
+		if hasConfig && cfg != nil {
+			InitCocoon()
+			*cocoon = NewCocoon(cfg, is64bit)
+		}
 	}
 
 	LogInfo(fmt.Sprintf("Cocoon info:\n%v\n", cocoon))
@@ -172,7 +174,7 @@ func Start(startupCmdFile, logFileName string) {
 	os.Stderr = stderr
 
 	if hasConfig {
-		if errs := validator.Validate(cocoon); errs != nil {
+		if errs := validator.Validate(*cocoon); errs != nil {
 			showError(fmt.Sprintf("Cocoon errors: %v\n", errs))
 			os.Exit(1)
 		}
