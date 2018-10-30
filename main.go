@@ -160,10 +160,16 @@ func Start(startupCmdFile, logFileName string, cocoon *Cocoon) {
 	var stdout *os.File
 	var stderr *os.File
 	var stdError error
+
+	outputsPath := cocoon.LogPath
+	if len(outputsPath) < 1 {
+		outputsPath = cocoon.LarvaPath
+	}
+
 	if hasConfig {
-		stdout, stderr, stdError = GetOutputs(cocoon.LarvaPath, logFileName)
+		stdout, stderr, stdError = GetOutputs(outputsPath, logFileName)
 	} else {
-		stdout, stderr, stdError = GetOutputs(cocoon.LarvaPath, filepath.Base(myName))
+		stdout, stderr, stdError = GetOutputs(outputsPath, filepath.Base(myName))
 	}
 
 	if stdError != nil {

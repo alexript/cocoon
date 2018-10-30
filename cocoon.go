@@ -195,6 +195,7 @@ type Cocoon struct {
 	LarvaPath         string `validate:"fileExists"`
 	LarvaStartup      string `validate:"fileExists"`
 	UsePipe           bool
+	LogPath           string
 }
 
 func (cocoon Cocoon) String() string {
@@ -207,6 +208,7 @@ func (cocoon Cocoon) String() string {
 	buffer.WriteString(fmt.Sprintf("Chrystalis Init script: %s\n", cocoon.ChrystalisStartup))
 	buffer.WriteString(fmt.Sprintf("Larva path: %s\n", cocoon.LarvaPath))
 	buffer.WriteString(fmt.Sprintf("Larva startup script: %s\n", cocoon.LarvaStartup))
+	buffer.WriteString(fmt.Sprintf("Log path: %s\n", cocoon.LogPath))
 
 	return buffer.String()
 }
@@ -222,6 +224,7 @@ func NewCocoon(cfg *initfile.File, is64bit bool) Cocoon {
 		LarvaPath:         getLarvaPath(cfg),
 		LarvaStartup:      getLarvaStartupScript(cfg),
 		UsePipe:           getCocoonUsepipe(cfg),
+		LogPath:           "",
 	}
 }
 
@@ -236,6 +239,7 @@ func DefaultCocoon(startupCmdFile string, is64bit bool) Cocoon {
 		LarvaPath:         GetMyselfDir(),
 		LarvaStartup:      startupCmdFile,
 		UsePipe:           false,
+		LogPath:           "",
 	}
 }
 
