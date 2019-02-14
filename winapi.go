@@ -56,7 +56,8 @@ const (
 	mbDefButton3 = 0x00000200
 	mbDefButton4 = 0x00000300
 
-	createNoWindow = 0x08000000
+	createNoWindow        = 0x08000000
+	createNewProcessGroup = 0x00000200
 )
 
 var (
@@ -132,7 +133,7 @@ func StartCmdScript(scriptName string, attr *os.ProcAttr) *os.Process {
 		attr.Sys = &zeroSysProcAttr
 	}
 	attr.Sys.HideWindow = true
-	attr.Sys.CreationFlags = attr.Sys.CreationFlags | createNoWindow
+	attr.Sys.CreationFlags = attr.Sys.CreationFlags | createNoWindow | createNewProcessGroup
 	if _, err := os.Stat(scriptName); err == nil {
 		LogInfo(fmt.Sprintf("execute script: %v", scriptName))
 		p, perr := os.StartProcess(os.Getenv("COMSPEC"), []string{"/C", scriptName}, attr)
@@ -165,7 +166,7 @@ func StartCmdScripts(scriptNames []string, attr *os.ProcAttr) *os.Process {
 		attr.Sys = &zeroSysProcAttr
 	}
 	attr.Sys.HideWindow = true
-	attr.Sys.CreationFlags = attr.Sys.CreationFlags | createNoWindow
+	attr.Sys.CreationFlags = attr.Sys.CreationFlags | createNoWindow | createNewProcessGroup
 
 	cmdLine := makeCmdLine(scriptNames)
 	attr.Sys.CmdLine = cmdLine
