@@ -127,7 +127,7 @@ func Stop() {
 
 // Start cocoon container
 func Start(startupCmdFile, logFileName string, cocoon *Cocoon) {
-	larvaProcess = nil
+	Stop()
 	isConsoleAttached := AttachConsole()
 
 	defer FreeConsole()
