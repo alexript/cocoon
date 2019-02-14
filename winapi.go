@@ -127,7 +127,7 @@ func Is64bitOS() bool {
 var zeroSysProcAttr syscall.SysProcAttr
 
 // StartCmdScript starts %COMSPEC% (cmd.exe expected) with scriptName as /C argument value.
-func StartCmdScript(scriptName string, attr *os.ProcAttr) {
+func StartCmdScript(scriptName string, attr *os.ProcAttr) *os.Process {
 	if attr.Sys == nil {
 		attr.Sys = &zeroSysProcAttr
 	}
@@ -139,12 +139,13 @@ func StartCmdScript(scriptName string, attr *os.ProcAttr) {
 		if perr != nil {
 			LogError(perr)
 		} else {
-			p.Wait()
+			return p
 		}
 
 	} else {
 		LogError(err)
 	}
+	return nil
 }
 
 func makeCmdLine(args []string) string {
@@ -159,7 +160,7 @@ func makeCmdLine(args []string) string {
 }
 
 // StartCmdScripts creates sequence '"script1" && "script2" && ...' and call %COMSPEC% (cmd.exe) with this sequence as /C value
-func StartCmdScripts(scriptNames []string, attr *os.ProcAttr) {
+func StartCmdScripts(scriptNames []string, attr *os.ProcAttr) *os.Process {
 	if attr.Sys == nil {
 		attr.Sys = &zeroSysProcAttr
 	}
@@ -174,7 +175,8 @@ func StartCmdScripts(scriptNames []string, attr *os.ProcAttr) {
 	if perr != nil {
 		LogError(perr)
 	} else {
-		p.Wait()
+		return p
 	}
 
+	return nil
 }

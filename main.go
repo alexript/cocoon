@@ -50,6 +50,8 @@ var (
 	injectName     = injectCommand.Arg("name", "New chrysalis name").Required().String()
 	injectZip      = injectCommand.Arg("injected", "ZIP file with new chrysalis").Required().String()
 	dropRuntimes   = injectCommand.Arg("dropOther", "Delete old chrysalises on success").Enum("yes", "no", "true", "false")
+
+	larvaProcess *os.Process
 )
 
 func appendScript(scriptName string, slice []string) []string {
@@ -116,9 +118,16 @@ func readConfiguration() *initfile.File {
 	return cfg
 }
 
+func Stop() {
+	if larvaProcess != nil {
+		larvaProcess.Kill()
+	}
+	larvaProcess = nil
+}
+
 // Start cocoon container
 func Start(startupCmdFile, logFileName string, cocoon *Cocoon) {
-
+	larvaProcess = nil
 	isConsoleAttached := AttachConsole()
 
 	defer FreeConsole()
@@ -225,7 +234,10 @@ func Start(startupCmdFile, logFileName string, cocoon *Cocoon) {
 
 	_ = stdout.Sync()
 	_ = stderr.Sync()
-	StartCmdScripts(scripts, procAttr)
+	larvaProcess := StartCmdScripts(scripts, procAttr)
+	if larvaProcess != nil {
+		larvaProcess.Wait()
+	}
 	_ = stdout.Sync()
 	_ = stderr.Sync()
 }
