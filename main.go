@@ -119,6 +119,7 @@ func readConfiguration() *initfile.File {
 }
 
 func Stop() {
+	notifyChilds("event", "die")
 	if larvaProcess != nil {
 		larvaProcess.Kill()
 	}
