@@ -223,6 +223,9 @@ func Start(startupCmdFile, logFileName string, cocoon *Cocoon) {
 		"COCOON_ARGUMENTS=" + strings.Join(arguments[:], " "),
 		"COCOON_EXE=" + myName,
 	}...)
+	if cocoon.UsePipe {
+		procAttr.Env = append(procAttr.Env, "COCOON_PIPE="+GetNpipeName())
+	}
 	procAttr.Dir = cocoon.LarvaPath
 
 	var scripts []string
