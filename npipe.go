@@ -28,15 +28,9 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/natefinch/npipe"
-)
-
-var (
-	childPipes []string
-	pipesMutex = &sync.Mutex{}
 )
 
 // GetNpipeName constructs npipe name by pid
@@ -45,61 +39,31 @@ func GetNpipeName() string {
 	return fmt.Sprintf("\\\\.\\pipe\\cocoon_%v", pid)
 }
 
-func addChildPipe(pipeName string) {
-	pipesMutex.Lock()
-	if childPipes == nil {
-		childPipes = make([]string, 0)
-	}
-	childPipes = append(childPipes, pipeName)
-	pipesMutex.Unlock()
-}
-
-func removeChildPipe(pipeName string) {
-
-	if childPipes == nil || len(childPipes) == 0 {
-		return
-	}
-	pipesMutex.Lock()
-	var na []string
-	for _, v := range childPipes {
-		if v == pipeName {
-			continue
-		} else {
-			na = append(na, v)
-		}
-	}
-	childPipes = na
-	pipesMutex.Unlock()
-}
-
 func notifyChilds(k, v string) {
-
-	if childPipes == nil || len(childPipes) == 0 {
+	message := k + ":" + v
+	ln, err := npipe.Listen(GetNpipeName())
+	if err != nil {
+		LogError(err)
 		return
 	}
-	pipesMutex.Lock()
-	message := k + ":" + v
-	for _, pipeName := range childPipes {
-		conn, err := npipe.Dial(pipeName)
-		if err != nil {
-			LogError(err)
-		} else {
-			if _, err := fmt.Fprintln(conn, message); err != nil {
-				LogError(err)
-			}
-			err = conn.Close()
-			if err != nil {
-				LogError(err)
-			}
-		}
+	defer ln.Close()
+	conn, err := ln.Accept()
+	if err != nil {
+		// handle error
+		LogError(err)
+		return
 	}
-	pipesMutex.Unlock()
+	if _, err := fmt.Fprintln(conn, message); err != nil {
+		LogError(err)
+	}
+
 }
 
 // ListenNpipe starts npipe listener
 func ListenNpipe() *npipe.PipeListener {
 	ln, err := npipe.Listen(GetNpipeName())
 	if err != nil {
+		LogError(err)
 		return nil
 	}
 
@@ -108,6 +72,7 @@ func ListenNpipe() *npipe.PipeListener {
 			conn, err := ln.Accept()
 			if err != nil {
 				// handle error
+				LogError(err)
 				continue
 			}
 
@@ -125,12 +90,6 @@ func ListenNpipe() *npipe.PipeListener {
 				switch msgKey {
 				case "messagebox":
 					go DefaultMessageBox("NPipe message", msgValue)
-					break
-				case "regchild":
-					addChildPipe(msgValue)
-					break
-				case "unregchild":
-					removeChildPipe(msgValue)
 					break
 				}
 
