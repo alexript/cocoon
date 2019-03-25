@@ -152,6 +152,15 @@ func Start(startupCmdFile, logFileName string, cocoon *Cocoon) {
 
 	params := os.Args[1:]
 
+	f := func(r rune) bool {
+		return r == ' '
+	}
+	for k, v := range params {
+		if strings.IndexFunc(v, f) != -1 {
+			params[k] = "\"" + params[k] + "\""
+		}
+	}
+
 	defer CloseLog()
 
 	LogInfo(fmt.Sprintf("Should be console attached: %v", isConsoleAttached))
