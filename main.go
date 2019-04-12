@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Alexander Malyshev <alexript@outlook.com>
+// Copyright (c) 2018-2019 Alexander Malyshev <alexript@outlook.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,18 @@ var (
 	dropRuntimes   = injectCommand.Arg("dropOther", "Delete old chrysalises on success").Enum("yes", "no", "true", "false")
 
 	larvaProcess *os.Process
+
+	cocoonEnvPrefix = []string{
+		"COCOON_",
+		"JAVA_HOME",
+		"JRE_HOME",
+		"JDK_HOME",
+		"JRE_ARCH_DIR",
+		"RUNTIME_DIR",
+		"STABLE_RUNTIME",
+		"CURRENT_RUNTIME",
+		"_ROOT",
+	}
 )
 
 func appendScript(scriptName string, slice []string) []string {
@@ -127,6 +139,27 @@ func Stop() {
 		larvaProcess.Kill()
 	}
 	larvaProcess = nil
+}
+
+func isCocoonEnv(envstring string) bool {
+	result := false
+	for _, v := range cocoonEnvPrefix {
+		if strings.HasPrefix(envstring, v) {
+			result = true
+			break
+		}
+	}
+	return result
+}
+
+func filterOutEnviron(orig []string) []string {
+	filtered := []string{}
+	for _, v := range orig {
+		if !isCocoonEnv(v) {
+			filtered = append(filtered, v)
+		}
+	}
+	return filtered
 }
 
 // Start cocoon container
@@ -226,7 +259,7 @@ func Start(startupCmdFile, logFileName string, cocoon *Cocoon) {
 
 	procAttr := new(os.ProcAttr)
 	procAttr.Files = []*os.File{os.Stdin, stdout, stderr}
-	procAttr.Env = append(os.Environ(), []string{
+	procAttr.Env = append(filterOutEnviron(os.Environ()), []string{
 
 		fmt.Sprintf("COCOON_PID=%v", syscall.Getpid()),
 		"COCOON_ARCH=" + cocoon.ArchStr,
